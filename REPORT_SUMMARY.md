@@ -34,8 +34,12 @@ Logistic gọn giữ năm tỷ số Altman (gồm vốn hóa/nợ) và xét thê
 
 ¹ Với danh sách cố định, chi phí rà soát tối đa mỗi hồ sơ bằng e × LGD × EAD × TP / số hồ sơ. Hai dòng top dùng ngân sách theo từng năm và e = 10%. LGD = 45%, EAD = 1 tỷ đồng. Các đại lượng hòa vốn dùng kết cục phát triển đã biết.
 
-## Phạm vi
+## Kết luận
 
-Các năm 2015–2018 đã được xem nhiều lần và có mặt trong backtest. Chu kỳ kinh tế và độ dài lịch sử huấn luyện có thể góp phần làm lệch hiệu chuẩn. Chỉnh hệ số chặn giả định sai lệch gần đây còn phù hợp trong các năm kế tiếp. Các con số hòa vốn giả định LGD, EAD và hiệu quả can thiệp chung cho doanh nghiệp. Muốn đánh giá triển khai cần một giai đoạn mới cùng dữ liệu tổn thất và hành động rà soát thực tế.
+Trên dữ liệu doanh nghiệp Mỹ giai đoạn 2015–2018, mô hình Logistic giúp thu hẹp danh sách cần rà soát. Nếu mỗi năm chỉ xem 10% hồ sơ có điểm rủi ro cao nhất, danh sách gồm 1.227 hồ sơ và chứa 87 trong 119 ca phá sản (73%). Có 32 ca nằm ngoài danh sách.
+
+Kết quả này ủng hộ việc dùng điểm mô hình để ưu tiên hồ sơ. Xác suất dự báo vẫn có sai lệch ở nhóm rủi ro cao nhất trên biểu đồ hiệu chuẩn. Logistic dự báo trung bình khoảng 4,8%, trong khi tỷ lệ phá sản thực tế của nhóm là 6,1%.
+
+Giai đoạn 2015–2018 đã được dùng trong quá trình phát triển mô hình. Để đánh giá khả năng triển khai, cần kiểm tra trên các năm mới và đo chi phí rà soát cùng tổn thất thực sự tránh được. Điểm hòa vốn trong nghiên cứu phụ thuộc vào giả định về các đại lượng này.
 
 Phụ lục Việt Nam dừng ở dữ liệu và nhãn nhìn trước hai năm. Trong mẫu cục bộ ban đầu, train có một ca dương. Bản phát hành chỉ chứa mã chuẩn bị dữ liệu.
