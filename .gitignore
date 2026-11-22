@@ -1,0 +1,22 @@
+# Khóa API và cấu hình cục bộ
+.env
+.env.*
+!.env.example
+.vnstock/
+.vnstock-oapi/
+*.pem
+*.key
+
+# Dữ liệu tải từ nguồn đã xác thực và bản bổ sung cục bộ
+/vn_bctc_cache.json
+/vn_bctc_cache.tmp
+/vn_bctc_bo_sung.json
+
+# Tệp tạm, cache Python và kernel
+/_work/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+.kaggle/
+kaggle.json

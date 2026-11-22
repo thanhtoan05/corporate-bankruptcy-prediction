@@ -1,0 +1,16 @@
+# Môi trường kiểm thử: CPython 3.11.9. Vnstock là tùy chọn riêng, không cần khi đọc cache.
+numpy==2.2.6
+pandas==2.3.3
+scipy==1.13.1
+scikit-learn==1.8.0
+imbalanced-learn==0.14.2
+xgboost==3.2.0
+shap==0.51.0
+numba==0.65.1
+llvmlite==0.47.0
+matplotlib==3.9.0
+seaborn==0.13.2
+kagglehub==1.0.3
+nbformat==5.10.4
+nbclient==0.10.0
+ipykernel==7.2.0
