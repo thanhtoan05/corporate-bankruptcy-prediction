@@ -2,18 +2,37 @@
 
 Notebook nghiên cứu khả năng xếp hạng rủi ro từ báo cáo tài chính và chuyển điểm thành danh sách rà soát theo chi phí giả định. Toàn bộ hàm và dữ liệu minh họa Việt Nam nằm trong `.ipynb`; không cần module Python hay JSON đi kèm. Đây là đánh giá hồi cứu; không phải hệ thống quyết định cấp tín dụng hay công cụ khuyến nghị đầu tư đã được kiểm chứng.
 
+## Kết quả chính
+
+Kết quả test 2015–2018 của lần chạy đang lưu, với **119 sự kiện trên 12.282 quan sát** (tỷ lệ nền 0,97%):
+
+| Mô hình | ROC-AUC | PR-AUC (Average Precision) |
+|---|---:|---:|
+| Altman Z cố định | 0,795 | 0,026 |
+| Logistic trên 5 biến Altman | 0,865 | 0,040 |
+| Logistic đầy đủ | 0,906 | 0,192 |
+| Random Forest | 0,926 | 0,176 |
+| XGBoost | 0,915 | 0,224 |
+
+XGBoost được chọn trên valid. Khoảng tin cậy ghép cặp 95% của chênh PR-AUC XGBoost − Logistic là **[−0,044; 0,114]**, nên chưa đủ bằng chứng kết luận XGBoost vượt Logistic. Xác suất XGBoost sau hiệu chuẩn dự báo tổng khoảng **183 sự kiện**, cao hơn **119 thực tế**; không coi đây là PD đã hiệu chuẩn tốt cho vận hành.
+
+Ở kịch bản rà soát chính được định nghĩa bên dưới, ngưỡng chọn trên valid là **4,60%**; trên test đạt Recall **69,7%**, Precision **8,2%**. Đây là kết quả với giả định chi phí và hiệu quả can thiệp, không phải hiệu quả kinh tế đã được kiểm chứng. Xem [bản tóm tắt](REPORT_SUMMARY.md) và [notebook](corporate-bankruptcy-prediction.ipynb) để đọc đầy đủ kết quả và giới hạn.
+
 ## Cấu trúc
 
 | Tệp | Nội dung |
 |---|---|
-| `Du_bao_pha_san_doanh_nghiep.ipynb` | Phân tích, biểu đồ, diễn giải và kết quả lần chạy |
+| `corporate-bankruptcy-prediction.ipynb` | Phân tích, biểu đồ, diễn giải và kết quả lần chạy; chứa toàn bộ hàm và dữ liệu minh họa Việt Nam |
 | Ô “0.1. Các hàm dùng chung” trong notebook | Đặc trưng, tiền xử lý, backtest, bootstrap, chi phí rà soát, giám sát, nhãn Việt Nam nhìn trước |
-| `tests/test_research_checks.py` | Kiểm tra cửa sổ nhãn, tiền xử lý, OOF theo thời gian và ngưỡng cảnh báo |
+| `tests/test_research_checks.py` (tùy chọn) | Sáu kiểm tra cửa sổ nhãn, tiền xử lý, OOF theo thời gian và ngưỡng cảnh báo; chỉ dùng nếu có thư mục `tests/` |
 | `requirements.txt` | Phiên bản thư viện của môi trường kiểm thử |
 | `REPORT_SUMMARY.md` | Tóm tắt mục đích, dữ liệu, kết quả và giới hạn |
-| `results/` | Bảng CSV và thông tin lần chạy; được cập nhật khi chạy notebook |
+| `results/` | Các bảng CSV và `run_manifest.json` do notebook tạo/cập nhật khi chạy; không cần có sẵn trong bản tải từ GitHub |
+| `du_bao_pha_san_FY2018.csv` | Danh sách cảnh báo hồi cứu FY2018 do mục 10 xuất ra thư mục làm việc |
 | Ô `VN_EMBEDDED_REPORTS` trong notebook | 105 bản ghi BCTC Việt Nam, nguồn VCI; dùng mặc định, không cần JSON hay API |
 | `vn_bctc_cache.json` (tùy chọn) | Bản dự phòng/cập nhật bên ngoài; chỉ đọc khi bật `VN_USE_LOCAL_FILES`, bị loại khỏi Git |
+
+Bộ tệp tối thiểu để chia sẻ project gồm notebook, `README.md`, `REPORT_SUMMARY.md`, `requirements.txt` và `.gitignore`. Các bảng xuất ra và thư mục kiểm tra là phần bổ sung; nếu chưa được đưa vào repository thì chúng không có trong bản clone. Notebook tự chạy được mà không cần các tệp bổ sung này khi môi trường đã cài đủ thư viện.
 
 ## Dữ liệu và định nghĩa nhãn
 
@@ -36,16 +55,18 @@ Mở notebook trong một thư mục có quyền ghi, chọn kernel vừa đăng
 
 Phần Mỹ cần mạng để tải dữ liệu nếu chưa có cache. Phụ lục Việt Nam dùng bản dữ liệu nhúng với `VN_USE_LOCAL_FILES = False`, `VN_REFRESH = False`; không cần JSON, Vnstock hay khóa API. Không giả lập dữ liệu để lấp khoảng thiếu. Backtest và bootstrap refit làm tăng thời gian so với chỉ đánh giá một lần chia; tốc độ phụ thuộc CPU và số luồng. Seed cố định không bảo đảm từng bit giống nhau giữa mọi phiên bản/hệ điều hành.
 
-Chạy các kiểm tra logic:
+Nếu có thêm `tests/test_research_checks.py`, chạy sáu kiểm tra logic từ thư mục project:
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
+Lệnh phải báo **Ran 6 tests** và **OK**. Bước này không bắt buộc để chạy notebook; bản chỉ gồm năm tệp tối thiểu ở trên không kèm bộ kiểm tra.
+
 ## Thiết kế đánh giá
 
 - Mô hình chính: train 1999–2011, valid 2012–2014, test 2015–2018. Chọn tham số và mô hình bằng PR-AUC valid. Test không dùng để chọn mô hình thay thế.
-- Hiệu chuẩn Platt từ dự báo ngoài mẫu trong train: ba khối 2005–2006, 2007–2008, 2009–2011, mỗi khối có một năm đệm so với train. Fit lại toàn bộ tiền xử lý trong từng khối. Valid vẫn dùng chọn tham số và ngưỡng, nên còn thiên lệch lựa chọn.
+- Với ba mô hình chính và Logistic Altman-5, Platt học từ dự báo ngoài mẫu trong train: ba khối 2005–2006, 2007–2008, 2009–2011, mỗi khối có một năm đệm so với train. Fit lại toàn bộ tiền xử lý trong từng khối. Riêng Altman Z dùng công thức cố định và được hiệu chuẩn trên train, không dùng các khối OOF. Valid vẫn dùng chọn tham số và ngưỡng, nên còn thiên lệch lựa chọn.
 - Baseline gồm Z cố định và Logistic trên đúng năm biến Altman. Z gốc có phạm vi ngành hẹp hơn dataset; không coi so sánh này là chứng minh ML vượt mọi phương pháp truyền thống.
 - Bootstrap công ty 500 lượt cho chênh lệch mô hình và refit; dùng chung mẫu ở mỗi lượt. Không suy ra ý nghĩa thống kê bằng cách so điểm mới với khoảng tin cậy cũ.
 - Backtest mở rộng 2012–2018 có inner selection chỉ dùng quá khứ, RF 100 cây/lưới nhỏ để kiểm soát thời gian. Không dùng lại tham số đã chọn trên valid tương lai. Stress test giữ train đến 2006, test 2007–2010 theo yêu cầu hồi cứu; do thiếu ngày sự kiện/công bố, không tuyên bố đây là mô phỏng đầu năm 2007 có đủ thông tin.
@@ -62,7 +83,7 @@ Chi phí = C_rà_soát × (TP + FP) + L × FN + (1 − e) × L × TP
 Ngưỡng PD lý thuyết = C_rà_soát / (e × LGD × EAD)
 ```
 
-Kịch bản chính: C = 1 triệu VND, EAD = 1 tỷ VND, LGD = 45%, hiệu quả tránh tổn thất e = 10%. Đây là giả định minh họa quy đổi, không phải dữ liệu khoản vay thực tế hay ước lượng hiệu quả can thiệp. Ngưỡng thực nghiệm chọn trên valid rồi khóa cho test. Không so sánh trực tiếp ngưỡng mới với ngưỡng 4,43% của mô hình FN:FP cũ vì bài toán chi phí và cách hiệu chuẩn đã đổi.
+Kịch bản chính: C = 1 triệu VND, EAD = 1 tỷ VND, LGD = 45%, hiệu quả tránh tổn thất e = 10%. Đây là giả định minh họa quy đổi, không phải dữ liệu khoản vay thực tế hay ước lượng hiệu quả can thiệp. Công thức cho ngưỡng lý thuyết **2,22%**; tìm chi phí nhỏ nhất trên valid cho ngưỡng thực nghiệm **4,60%**, rồi khóa ngưỡng này để chấm test. Hai ngưỡng có thể khác nhau vì xác suất chưa hiệu chuẩn hoàn hảo và tập valid hữu hạn.
 
 ## Dữ liệu Việt Nam và khóa API
 
