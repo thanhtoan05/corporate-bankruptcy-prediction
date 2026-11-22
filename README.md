@@ -1,96 +1,53 @@
-# Phân tích rủi ro phá sản doanh nghiệp
+# Xếp hạng rủi ro phá sản doanh nghiệp
 
-Notebook nghiên cứu khả năng xếp hạng rủi ro từ báo cáo tài chính và chuyển điểm thành danh sách rà soát theo chi phí giả định. Toàn bộ hàm và dữ liệu minh họa Việt Nam nằm trong `.ipynb`; không cần module Python hay JSON đi kèm. Đây là đánh giá hồi cứu; không phải hệ thống quyết định cấp tín dụng hay công cụ khuyến nghị đầu tư đã được kiểm chứng.
+Từ báo cáo tài chính của 8.971 doanh nghiệp Mỹ, nghiên cứu xếp hạng rủi ro phá sản và ước tính chi phí lập danh sách rà soát. Mô hình chính theo quy tắc backtest 2012–2018 là **Logistic**. Biểu đồ và bảng dưới mô tả tập phát triển 2015–2018, gồm 119 sự kiện trên 12.282 quan sát (0,97%).
 
-## Kết quả chính
+![ROC và Precision–Recall trên tập phát triển 2015–2018](figures/development-roc-pr.png)
 
-Kết quả test 2015–2018 của lần chạy đang lưu, với **119 sự kiện trên 12.282 quan sát** (tỷ lệ nền 0,97%):
+| Mô hình | ROC-AUC phát triển | PR-AUC phát triển | Brier skill¹ |
+|---|---|---|---|
+| Altman Z | 0,795 | 0,026 | 0,0% |
+| Logistic | 0,906 | 0,192 | 9,7% |
+| RandomForest | 0,926 | 0,176 | 9,3% |
+| XGBoost | 0,915 | 0,224 | 8,3% |
+| Logistic Altman-5 | 0,865 | 0,040 | 0,2% |
 
-| Mô hình | ROC-AUC | PR-AUC (Average Precision) |
-|---|---:|---:|
-| Altman Z cố định | 0,795 | 0,026 |
-| Logistic trên 5 biến Altman | 0,865 | 0,040 |
-| Logistic đầy đủ | 0,906 | 0,192 |
-| Random Forest | 0,926 | 0,176 |
-| XGBoost | 0,915 | 0,224 |
+¹ Brier skill = 1 − Brier mô hình / Brier của dự báo hằng số. Hằng số là tỷ lệ sự kiện trên valid, cố định trước giai đoạn đánh giá. PR-AUC dùng Average Precision (AP).
 
-XGBoost được chọn trên valid. Khoảng tin cậy ghép cặp 95% của chênh PR-AUC XGBoost − Logistic là **[−0,044; 0,114]**, nên chưa đủ bằng chứng kết luận XGBoost vượt Logistic. Xác suất XGBoost sau hiệu chuẩn dự báo tổng khoảng **183 sự kiện**, cao hơn **119 thực tế**; không coi đây là PD đã hiệu chuẩn tốt cho vận hành.
+1. **Thứ hạng thay đổi theo năm.** XGBoost gốc có AP cao hơn Logistic trong 6/7 năm. Chênh trung bình là 0,032, p kiểm định dấu hai phía bằng 0,125. XGBoost đơn điệu đạt AP trung bình 0,226, so với 0,213 của bản gốc, trên cùng bảy năm và cùng ngân sách tìm tham số.
+2. **Xác suất thay đổi khi cập nhật mức nền.** Giữ độ dốc Platt và chỉnh hệ số chặn trên 2012–2014 đưa tổng sự kiện dự báo của XGBoost từ 182,8 xuống 119,5 so với 119 quan sát. Brier skill chuyển từ 9,0% sang 8,3%.
+3. **Rà soát có điểm hòa vốn.** Ở kịch bản chính, Logistic dùng ngưỡng 1,37%, đưa 1742 hồ sơ vào danh sách và tìm được 97 ca. Với chi phí 1 triệu đồng/hồ sơ, hiệu quả tránh tổn thất phải đạt ít nhất 3,99% để hòa vốn trên danh sách này.
 
-Ở kịch bản rà soát chính được định nghĩa bên dưới, ngưỡng chọn trên valid là **4,60%**; trên test đạt Recall **69,7%**, Precision **8,2%**. Đây là kết quả với giả định chi phí và hiệu quả can thiệp, không phải hiệu quả kinh tế đã được kiểm chứng. Xem [bản tóm tắt](REPORT_SUMMARY.md) và [notebook](corporate-bankruptcy-prediction.ipynb) để đọc đầy đủ kết quả và giới hạn.
+[Bản tóm tắt kết quả](REPORT_SUMMARY.md) · [Notebook phân tích](corporate-bankruptcy-prediction.ipynb)
 
-## Cấu trúc
+## Dữ liệu và thiết kế đánh giá
 
-| Tệp | Nội dung |
-|---|---|
-| `corporate-bankruptcy-prediction.ipynb` | Phân tích, biểu đồ, diễn giải và kết quả lần chạy; chứa toàn bộ hàm và dữ liệu minh họa Việt Nam |
-| Ô “0.1. Các hàm dùng chung” trong notebook | Đặc trưng, tiền xử lý, backtest, bootstrap, chi phí rà soát, giám sát, nhãn Việt Nam nhìn trước |
-| `tests/test_research_checks.py` (tùy chọn) | Sáu kiểm tra cửa sổ nhãn, tiền xử lý, OOF theo thời gian và ngưỡng cảnh báo; chỉ dùng nếu có thư mục `tests/` |
-| `requirements.txt` | Phiên bản thư viện của môi trường kiểm thử |
-| `REPORT_SUMMARY.md` | Tóm tắt mục đích, dữ liệu, kết quả và giới hạn |
-| `results/` | Các bảng CSV và `run_manifest.json` do notebook tạo/cập nhật khi chạy; không cần có sẵn trong bản tải từ GitHub |
-| `du_bao_pha_san_FY2018.csv` | Danh sách cảnh báo hồi cứu FY2018 do mục 10 xuất ra thư mục làm việc |
-| Ô `VN_EMBEDDED_REPORTS` trong notebook | 105 bản ghi BCTC Việt Nam, nguồn VCI; dùng mặc định, không cần JSON hay API |
-| `vn_bctc_cache.json` (tùy chọn) | Bản dự phòng/cập nhật bên ngoài; chỉ đọc khi bật `VN_USE_LOCAL_FILES`, bị loại khỏi Git |
+Mỗi quan sát là một doanh nghiệp ở một năm báo cáo. Nhãn dương khi đây là năm cuối trong dữ liệu của một công ty mang nhãn `failed`. Quy ước này suy ra sự kiện ở năm kế tiếp. Dataset thiếu ngày công bố BCTC và ngày phá sản đã xác minh.
 
-Bộ tệp tối thiểu để chia sẻ project gồm notebook, `README.md`, `REPORT_SUMMARY.md`, `requirements.txt` và `.gitignore`. Các bảng xuất ra và thư mục kiểm tra là phần bổ sung; nếu chưa được đưa vào repository thì chúng không có trong bản clone. Notebook tự chạy được mà không cần các tệp bổ sung này khi môi trường đã cài đủ thư viện.
+- Mô hình dùng 1999–2011 để fit và 2012–2014 để chọn tham số, cập nhật hệ số chặn và chọn ngưỡng. Mỗi mô hình học bước làm sạch từ tập huấn luyện tương ứng.
+- Backtest cuốn chiếu chọn lại tham số trong quá khứ trước mỗi năm 2012–2018. Logistic là lựa chọn mặc định. XGBoost gốc chỉ thay thế khi chênh AP trung bình dương và kiểm định dấu ghép cặp theo năm đạt p < 0,05. RF và XGBoost đơn điệu là các đối chứng. Quy tắc được bổ sung sau khi đã xem dữ liệu. Bảy năm có thể phụ thuộc nhau nên cần xác nhận ở giai đoạn mới.
+- Notebook còn có stress test 2007–2010, bootstrap 500 lần theo công ty cho chênh lệch mô hình/refit, độ nhạy với nhãn hai năm và kết cục chưa rõ, cờ thiếu, Logistic gọn, SHAP, PSI/CSI và thứ tự rủi ro theo nhóm.
 
-## Dữ liệu và định nghĩa nhãn
+## Chạy lại
 
-**Mỹ:** [American Companies Bankruptcy Prediction Dataset](https://www.kaggle.com/datasets/utkarshx27/american-companies-bankruptcy-prediction-dataset), 78.682 doanh nghiệp–năm, 8.971 doanh nghiệp, năm 1999–2018. Notebook dùng `kagglehub.dataset_download` rồi đọc `american_bankruptcy.csv` trong thư mục do thư viện trả về. Không cần sao chép CSV vào project. KaggleHub dùng cache nếu phiên bản đó đã có. Tuân theo giấy phép và điều kiện tại trang nguồn khi sử dụng/chia sẻ dữ liệu.
+Dùng Python 3.11, seed 42. Cài môi trường từ thư mục chứa notebook.
 
-`status_label` là nhãn theo công ty, không có ngày phá sản từng sự kiện. Quy ước chính coi năm quan sát cuối của công ty failed là năm ngay trước sự kiện; 609 nhãn dương. Không khẳng định đây là ngày phá sản đã được kiểm chứng. `results/run_manifest.json` lưu SHA-256 của CSV và phiên bản thư viện, không lưu khóa API hay đường dẫn cá nhân. Tải “mới nhất” có thể thay đổi dữ liệu; cần đối chiếu hash để tái lập đúng lần chạy.
-
-**Việt Nam:** bản dữ liệu nhúng sao chép nguyên cache từ nguồn VCI qua Vnstock trong lần thu thập trước, 105 doanh nghiệp–năm thuộc 16 mã ngành thép, 2018–2024. Thiếu 2016–2017 và một số năm của một số doanh nghiệp. Không có dữ liệu sự kiện cảnh báo/kiểm soát/hủy niêm yết xác minh theo ngày. Phụ lục chỉ minh họa, không xếp hạng mô hình hoặc đối chiếu chất lượng với Mỹ. Nhãn dựa trên lỗ trong cả t+1 và t+2 hoặc vốn chủ âm ở một trong hai năm; X chỉ dùng năm t. Những cửa sổ thiếu tương lai bị loại, không gán thành không kiệt quệ. Bản nhúng không tự cập nhật và được chia sẻ cùng notebook; ghi rõ nguồn và tuân thủ điều kiện sử dụng dữ liệu khi phân phối.
-
-## Môi trường và cách chạy
-
-Môi trường đã kiểm thử: **Python 3.11.9**, seed **42**. Cài thư viện trong môi trường riêng và chọn đúng kernel đó trong Jupyter hoặc VS Code:
-
-```bash
+```shell
 python -m pip install -r requirements.txt
-python -m ipykernel install --user --name bankruptcy-research --display-name "Python (Bankruptcy Research)"
 ```
 
-Mở notebook trong một thư mục có quyền ghi, chọn kernel vừa đăng ký, rồi **Restart Kernel → Run All**. Có thể chỉ sao chép một tệp `.ipynb` sang thư mục mới để chạy; các hàm và dữ liệu Việt Nam đã nằm bên trong. `results/` được tạo dưới working directory. Khởi động lại kernel sau khi thay phiên bản thư viện, đặc biệt NumPy/Numba/SHAP.
+Mở [notebook](corporate-bankruptcy-prediction.ipynb), chọn đúng kernel và chạy **Restart Kernel → Run All**. KaggleHub tải [dữ liệu Mỹ](https://www.kaggle.com/datasets/utkarshx27/american-companies-bankruptcy-prediction-dataset) khi cần. Notebook ghi các bảng vào `results/`, mã SHA-256 của dữ liệu vào `results/run_manifest.json` và danh sách FY2018 vào `du_bao_pha_san_FY2018.csv`. Nếu có bộ kiểm tra cục bộ, chạy `python -m unittest discover -s tests -v`.
 
-Phần Mỹ cần mạng để tải dữ liệu nếu chưa có cache. Phụ lục Việt Nam dùng bản dữ liệu nhúng với `VN_USE_LOCAL_FILES = False`, `VN_REFRESH = False`; không cần JSON, Vnstock hay khóa API. Không giả lập dữ liệu để lấp khoảng thiếu. Backtest và bootstrap refit làm tăng thời gian so với chỉ đánh giá một lần chia; tốc độ phụ thuộc CPU và số luồng. Seed cố định không bảo đảm từng bit giống nhau giữa mọi phiên bản/hệ điều hành.
+<details><summary>Phụ lục Việt Nam và cấu hình nguồn dữ liệu</summary>
 
-Nếu có thêm `tests/test_research_checks.py`, chạy sáu kiểm tra logic từ thư mục project:
+Phụ lục giữ mã tạo đặc trưng ở năm t và nhãn kiệt quệ kế toán ở t+1/t+2. Mẫu địa phương trước đây có 31 dòng huấn luyện với một ca dương và 14 dòng holdout với hai ca dương. Phụ lục chỉ thống kê dữ liệu và nhãn.
 
-```bash
-python -m unittest discover -s tests -v
-```
+Mặc định Run All bỏ qua thống kê Việt Nam khi chưa bật nguồn. Để dùng cache riêng, đặt `VN_USE_LOCAL_FILES = True` và cung cấp `vn_bctc_cache.json` hoặc `vn_bctc_bo_sung.json`. Muốn tải lại, chọn nguồn có quyền đọc BCTC, cấu hình khóa trong terminal bằng `vnstock login` và `vnstock keys set <nguồn>`, đặt biến môi trường `VN_BCTC_SOURCE` rồi bật `VN_REFRESH`. Nhánh API cần Vnstock thế hệ 6 và tài khoản nguồn của người chạy.
 
-Lệnh phải báo **Ran 6 tests** và **OK**. Bước này không bắt buộc để chạy notebook; bản chỉ gồm năm tệp tối thiểu ở trên không kèm bộ kiểm tra.
+Bản notebook này đã bỏ dữ liệu BCTC VCI nhúng do chưa xác minh được quyền phân phối lại. [Điều khoản Vietcap](https://www.vietcap.com.vn/dieu-khoan-su-dung-chinh-sach-bao-mat) · [Giấy phép phần mềm Vnstock](https://vnstocks.com/onboard/giay-phep-su-dung).
 
-## Thiết kế đánh giá
+</details>
 
-- Mô hình chính: train 1999–2011, valid 2012–2014, test 2015–2018. Chọn tham số và mô hình bằng PR-AUC valid. Test không dùng để chọn mô hình thay thế.
-- Với ba mô hình chính và Logistic Altman-5, Platt học từ dự báo ngoài mẫu trong train: ba khối 2005–2006, 2007–2008, 2009–2011, mỗi khối có một năm đệm so với train. Fit lại toàn bộ tiền xử lý trong từng khối. Riêng Altman Z dùng công thức cố định và được hiệu chuẩn trên train, không dùng các khối OOF. Valid vẫn dùng chọn tham số và ngưỡng, nên còn thiên lệch lựa chọn.
-- Baseline gồm Z cố định và Logistic trên đúng năm biến Altman. Z gốc có phạm vi ngành hẹp hơn dataset; không coi so sánh này là chứng minh ML vượt mọi phương pháp truyền thống.
-- Bootstrap công ty 500 lượt cho chênh lệch mô hình và refit; dùng chung mẫu ở mỗi lượt. Không suy ra ý nghĩa thống kê bằng cách so điểm mới với khoảng tin cậy cũ.
-- Backtest mở rộng 2012–2018 có inner selection chỉ dùng quá khứ, RF 100 cây/lưới nhỏ để kiểm soát thời gian. Không dùng lại tham số đã chọn trên valid tương lai. Stress test giữ train đến 2006, test 2007–2010 theo yêu cầu hồi cứu; do thiếu ngày sự kiện/công bố, không tuyên bố đây là mô phỏng đầu năm 2007 có đủ thông tin.
-- Độ nhạy nhãn hai năm dùng cửa sổ quan sát chung: train đến 2010, test 2015–2016; loại cửa sổ thiếu kết cục. Không giữ riêng các ca dương ở đuôi 2017–2018 khi chưa theo dõi đủ hai năm cho nhóm âm. Loại alive rời mẫu sớm là kiểm tra hồi cứu có thể gây thiên lệch sống sót, không phải bộ lọc vận hành.
-- Cờ thiếu, Logistic gọn có VIF và XGBoost đơn điệu là thí nghiệm độ vững; không chọn winner theo test. Các bảng PSI/CSI và rank ordering dùng biên từ train.
+## Phạm vi kết luận
 
-## Hành động và chi phí
-
-Cảnh báo dẫn đến **rà soát hồ sơ**, không tự động từ chối khách hàng. Chi phí tính cho mọi cảnh báo:
-
-```text
-L = LGD × EAD
-Chi phí = C_rà_soát × (TP + FP) + L × FN + (1 − e) × L × TP
-Ngưỡng PD lý thuyết = C_rà_soát / (e × LGD × EAD)
-```
-
-Kịch bản chính: C = 1 triệu VND, EAD = 1 tỷ VND, LGD = 45%, hiệu quả tránh tổn thất e = 10%. Đây là giả định minh họa quy đổi, không phải dữ liệu khoản vay thực tế hay ước lượng hiệu quả can thiệp. Công thức cho ngưỡng lý thuyết **2,22%**; tìm chi phí nhỏ nhất trên valid cho ngưỡng thực nghiệm **4,60%**, rồi khóa ngưỡng này để chấm test. Hai ngưỡng có thể khác nhau vì xác suất chưa hiệu chuẩn hoàn hảo và tập valid hữu hạn.
-
-## Dữ liệu Việt Nam và khóa API
-
-Đọc dữ liệu nhúng không cần Vnstock hay khóa. Bật `VN_USE_LOCAL_FILES = True` nếu muốn đọc cache/tệp bổ sung bên ngoài. Nếu muốn tải lại, bật `VN_REFRESH = True`; cần Vnstock thế hệ 6, `vnstock-oapi` và nguồn do người dùng chọn có quyền đọc BCTC; đường tải trực tuyến này chưa được kiểm thử với tài khoản nguồn của người dùng. Cài đặt theo [tài liệu Vnstock](https://vnstocks.com/docs/vnstock/v6/cai-dat), trong đúng môi trường notebook, sau khi xác nhận cấu hình phù hợp. Dữ liệu tải mới được lưu vào cache riêng, không tự thay bản nhúng trong notebook.
-
-Nhập khóa bằng `vnstock login` và `vnstock keys set <nguồn>` trong terminal có nhập ẩn. `VN_BCTC_SOURCE` chỉ chứa tên nguồn, không phải API key. Không đặt khóa trong notebook, cell output, README hoặc Git. `.gitignore` loại `.env`, các kho khóa cục bộ và cache Việt Nam. Gitignore không xóa bí mật đã commit; nếu từng lộ, phải thu hồi/đổi khóa và xử lý lịch sử Git.
-
-## Giới hạn còn lại
-
-Nhãn sự kiện suy ra, test ít ca và đã được xem trong quá trình nghiên cứu. Bootstrap công ty không mô tả đầy đủ phụ thuộc vĩ mô hoặc bất định từ fit/chọn tham số. OOF được tạo với tham số đã chọn theo valid nên vẫn không phải một nghiên cứu xác nhận độc lập hoàn toàn. Không có ngày công bố thực tế, ngành, LGD/EAD theo hồ sơ hoặc dữ liệu can thiệp. Kết quả kiểm tra thêm không khắc phục được thiếu dữ liệu nguồn. Cần tập ngoài thời gian mới và hồ sơ sự kiện xác minh trước triển khai.
+Các năm 2015–2018 đã được xem nhiều lần và có mặt trong backtest. Chu kỳ kinh tế và độ dài lịch sử huấn luyện có thể góp phần làm lệch hiệu chuẩn. Chỉnh hệ số chặn giả định sai lệch gần đây còn phù hợp trong các năm kế tiếp. Các con số hòa vốn giả định LGD, EAD và hiệu quả can thiệp chung cho doanh nghiệp. Muốn đánh giá triển khai cần một giai đoạn mới cùng dữ liệu tổn thất và hành động rà soát thực tế.
